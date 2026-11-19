@@ -1,0 +1,57 @@
+{
+  "name": "ztools-file-fusion",
+  "version": "1.1.0",
+  "description": "ZTools 插件：资源管理器多选后一键解散文件夹 / 合并到新文件夹，带冲突处理与历史撤销",
+  "keywords": [
+    "ztools",
+    "ztools-plugin",
+    "file-fusion",
+    "file-manager",
+    "explorer",
+    "windows",
+    "merge",
+    "dissolve"
+  ],
+  "homepage": "https://github.com/liuhao11223/file-fusion",
+  "bugs": {
+    "url": "https://github.com/liuhao11223/file-fusion/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liuhao11223/file-fusion.git"
+  },
+  "license": "MIT",
+  "author": "liuhao11223",
+  "platform": "win32",
+  "engines": {
+    "node": ">=18"
+  },
+  "ztools": {
+    "name": "file-fusion",
+    "title": "文件合并解散",
+    "version": "1.1.0",
+    "description": "悬浮窗一键解散文件夹或将多个文件/文件夹合并；支持在资源管理器中多选后直接操作，带冲突处理与历史撤回。",
+    "platform": [
+      "win32"
+    ],
+    "logo": "logo.png",
+    "preload": "preload.js",
+    "main": "index.html"
+  },
+  "files": [
+    "plugin.json",
+    "logo.png",
+    "preload.js",
+    "ball-preload.js",
+    "ball.html",
+    "ball.css",
+    "ball.js",
+    "index.html",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "pack:check": "npm pack --dry-run"
+  }
+}

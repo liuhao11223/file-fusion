@@ -8,3 +8,5 @@ file-fusion-history.json
 # 临时文件
 *.tmp
 *.log
+# npm
+*.tgz
