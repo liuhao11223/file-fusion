@@ -1,0 +1,10 @@
+# Node
+node_modules/
+
+# 运行时数据（保存在 ZTools userData，不属于仓库）
+file-fusion-settings.json
+file-fusion-history.json
+
+# 临时文件
+*.tmp
+*.log

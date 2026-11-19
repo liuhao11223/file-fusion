@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>文件合并解散</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft Yahei",sans-serif;
+           background:#f5f6f8; color:#1f2329; padding:20px; }
+    .card { background:#fff; border-radius:12px; padding:20px; margin-bottom:16px;
+            box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    h2 { font-size:15px; margin-bottom:14px; color:#1f2329; }
+    .row { display:flex; align-items:center; justify-content:space-between; padding:10px 0;
+           border-bottom:1px solid #f0f0f0; }
+    .row:last-child { border-bottom:none; }
+    .label { font-size:13px; }
+    .desc { font-size:11px; color:#8a9099; margin-top:2px; }
+    select, button { font-family:inherit; }
+    select { padding:5px 10px; border-radius:6px; border:1px solid #dcdfe3; font-size:13px; }
+    .toggle { width:40px; height:22px; border-radius:11px; background:#dcdfe3; position:relative;
+              cursor:pointer; transition:background .2s; }
+    .toggle.on { background:#3b82f6; }
+    .toggle::after { content:''; position:absolute; top:2px; left:2px; width:18px; height:18px;
+                     border-radius:50%; background:#fff; transition:left .2s; }
+    .toggle.on::after { left:20px; }
+    .btn { padding:8px 16px; border:none; border-radius:8px; font-size:13px; cursor:pointer;
+           color:#fff; background:#3b82f6; transition:opacity .2s; }
+    .btn:hover { opacity:.85; }
+    .btn.secondary { background:#f0f1f3; color:#4e5259; }
+    .btn.danger { background:#ef4444; }
+    .ball-preview { display:flex; justify-content:center; padding:20px 0; }
+    .actions { display:flex; gap:10px; }
+    .tip { font-size:12px; color:#8a9099; line-height:1.6; }
+    .empty { text-align:center; color:#8a9099; font-size:13px; padding:30px 0; }
+    .hist-item { padding:10px 0; border-bottom:1px solid #f0f0f0; font-size:12px; }
+    .hist-item:last-child { border-bottom:none; }
+    .hist-time { color:#8a9099; font-size:11px; }
+    .hist-action { font-weight:500; margin:2px 0; }
+    .undo-btn { font-size:11px; color:#3b82f6; cursor:pointer; border:none; background:none; }
+    .undo-btn:disabled { color:#bbb; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>悬浮窗预览</h2>
+    <div class="ball-preview">
+      <div id="preview-ball" style="width:220px;height:72px;background:rgba(30,30,35,.88);
+           border-radius:36px;display:flex;align-items:center;gap:6px;padding:8px 10px;">
+        <div style="width:28px;height:56px;border-radius:14px;background:rgba(255,255,255,.06);
+             display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:12px;">⋮⋮</div>
+        <div style="flex:1;height:52px;border-radius:14px;background:rgba(255,255,255,.06);
+             display:flex;flex-direction:column;align-items:center;justify-content:center;
+             color:rgba(255,255,255,.85);font-size:11px;gap:2px;">
+          <span style="font-size:14px;">↑</span><span>解散</span>
+        </div>
+        <div style="flex:1;height:52px;border-radius:14px;background:rgba(255,255,255,.06);
+             display:flex;flex-direction:column;align-items:center;justify-content:center;
+             color:rgba(255,255,255,.85);font-size:11px;gap:2px;">
+          <span style="font-size:14px;">↓</span><span>合并</span>
+        </div>
+      </div>
+    </div>
+    <p class="tip">在资源管理器中选中文件/文件夹后，点击悬浮窗上的按钮即可执行操作。</p>
+    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+      <button class="btn" id="btn-show-ball">显示悬浮窗</button>
+      <button class="btn secondary" id="btn-hide-ball">隐藏悬浮窗</button>
+      <div style="flex:1;"></div>
+      <div class="label">随 ZTools 启动自动显示</div>
+      <div class="toggle" id="toggle-autoshow"></div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="label">当前资源管理器选中项</div>
+      <div class="desc" id="sel-preview" style="margin-top:6px;">点击上方按钮或直接读取…</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>操作设置</h2>
+    <div class="row">
+      <div>
+        <div class="label">递归解散</div>
+        <div class="desc">解散时递归展开所有子文件夹</div>
+      </div>
+      <div class="toggle" id="toggle-recursive"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="label">重名冲突</div>
+        <div class="desc">移动时遇到同名文件的处理方式</div>
+      </div>
+      <select id="select-conflict">
+        <option value="rename">重命名</option>
+        <option value="overwrite">覆盖</option>
+        <option value="skip">跳过</option>
+      </select>
+    </div>
+    <div class="row">
+      <div>
+        <div class="label">合并模式</div>
+        <div class="desc">合并项目的目标文件夹</div>
+      </div>
+      <select id="select-merge-mode">
+        <option value="new">新建文件夹</option>
+        <option value="first">合并到第一项</option>
+      </select>
+    </div>
+    <div class="row">
+      <div>
+        <div class="label">合并扁平化</div>
+        <div class="desc">合并时将所有子项移动到目标根目录</div>
+      </div>
+      <div class="toggle" id="toggle-flatten"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>操作历史</h2>
+    <div id="history-list"><div class="empty">暂无历史记录</div></div>
+    <div style="margin-top:12px;">
+      <button class="btn danger" id="btn-clear-history">清除历史</button>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function loadSettings() {
+      const s = window.services.readSettings();
+      $('toggle-recursive').classList.toggle('on', !!s.dissolveRecursive);
+      $('toggle-flatten').classList.toggle('on', !!s.mergeFlatten);
+      $('toggle-autoshow').classList.toggle('on', s.autoShowBall !== false);
+      $('select-conflict').value = s.conflict || 'rename';
+      $('select-merge-mode').value = s.mergeMode || 'new';
+    }
+
+    function saveSetting(key, value) {
+      const s = window.services.readSettings();
+      s[key] = value;
+      window.services.writeSettings(s);
+    }
+
+    $('toggle-autoshow').addEventListener('click', (e) => {
+      const el = e.currentTarget;
+      const on = !el.classList.contains('on');
+      el.classList.toggle('on', on);
+      saveSetting('autoShowBall', on);
+    });
+
+    function refreshSelection() {
+      const el = $('sel-preview');
+      try {
+        const sel = window.services.readExplorerSelection();
+        if (!sel.items || sel.items.length === 0) {
+          el.textContent = sel.folder
+            ? `目录：${sel.folder}（未选中任何项目）`
+            : '未找到资源管理器窗口';
+          return;
+        }
+        const names = sel.items.map((i) => (i.isFolder ? '[夹] ' : '') + i.path.split(/[\\/]/).pop());
+        el.textContent = `已选 ${sel.items.length} 项：${names.join('、')}`;
+      } catch (err) {
+        el.textContent = '读取失败：' + err.message;
+      }
+    }
+    refreshSelection();
+    setInterval(refreshSelection, 3000);
+
+    $('toggle-recursive').addEventListener('click', (e) => {
+      const el = e.currentTarget;
+      const on = !el.classList.contains('on');
+      el.classList.toggle('on', on);
+      saveSetting('dissolveRecursive', on);
+    });
+
+    $('toggle-flatten').addEventListener('click', (e) => {
+      const el = e.currentTarget;
+      const on = !el.classList.contains('on');
+      el.classList.toggle('on', on);
+      saveSetting('mergeFlatten', on);
+    });
+
+    $('select-conflict').addEventListener('change', (e) => saveSetting('conflict', e.target.value));
+    $('select-merge-mode').addEventListener('change', (e) => saveSetting('mergeMode', e.target.value));
+
+    $('btn-show-ball').addEventListener('click', () => window.services.createBall());
+    $('btn-hide-ball').addEventListener('click', () => window.services.closeBall());
+    function loadHistory() {
+      try {
+        const hist = window.services.readHistory().slice(-10).reverse();
+        const list = $('history-list');
+        if (hist.length === 0) {
+          list.innerHTML = '<div class="empty">暂无历史记录</div>';
+          return;
+        }
+        list.innerHTML = hist.map((h, i) => `
+          <div class="hist-item">
+            <div class="hist-time">${new Date(h.timestamp).toLocaleString()}</div>
+            <div class="hist-action">${h.type === 'dissolve' ? '解散' : '合并'} ${h.summary?.totalMoved || 0} 项${h.summary?.errorCount ? '，' + h.summary.errorCount + ' 错误' : ''}</div>
+            <div class="hist-time">${h.targetName || ''}</div>
+            <button class="undo-btn" data-id="${h.id}">撤销</button>
+          </div>`).join('');
+        list.querySelectorAll('.undo-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const r = window.services.undoRecord(btn.dataset.id);
+            if (r.success) { loadHistory(); } else { alert('撤销失败：' + (r.errors || []).join('；')); }
+          });
+        });
+      } catch (e) {}
+    }
+
+    $('btn-clear-history').addEventListener('click', () => {
+      window.services.clearHistory();
+      loadHistory();
+    });
+
+    loadSettings();
+    loadHistory();
+  </script>
+</body>
+</html>

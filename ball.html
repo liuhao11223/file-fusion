@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Fusion Ball</title>
+  <link rel="stylesheet" href="ball.css">
+</head>
+<body>
+  <div id="ball" class="ball">
+    <!-- far left, vertically centred: the drag grip (two columns of three dots) -->
+    <div class="ball-drag" id="drag-handle" title="拖动移动悬浮窗">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="6" r="1.5" fill="currentColor"/>
+        <circle cx="15" cy="6" r="1.5" fill="currentColor"/>
+        <circle cx="9" cy="12" r="1.5" fill="currentColor"/>
+        <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+        <circle cx="9" cy="18" r="1.5" fill="currentColor"/>
+        <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
+      </svg>
+    </div>
+
+    <!-- the two actions, centred as a group (both axes) -->
+    <div class="ball-actions">
+      <button class="ball-btn" id="btn-dissolve" title="解散选中的文件夹">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>解散</span>
+      </button>
+      <button class="ball-btn" id="btn-merge" title="合并选中的项目">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>合并</span>
+      </button>
+    </div>
+
+    <!-- far right, vertically centred: close (same size as the grip) -->
+    <button class="ball-close" id="btn-close" title="关闭悬浮窗">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div id="status" class="status"></div>
+  <div id="counter" class="counter"></div>
+  <script src="ball.js"></script>
+</body>
+</html>

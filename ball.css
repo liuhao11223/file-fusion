@@ -1,0 +1,195 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 220px;
+  height: 104px;
+  overflow: hidden;
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft Yahei", sans-serif;
+}
+
+/* ── the capsule ──
+   No box-shadow: on a transparent window the shadow cannot extend past the
+   window bounds, so it used to pile up as dark smudges in the four corners. */
+.ball {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 72px;
+  background: rgba(30, 30, 35, 0.92);
+  border-radius: 36px;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* ── far left, vertically centred: the drag grip (2 columns x 3 rows of dots) ── */
+.ball-drag {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.38);
+  cursor: grab;
+  transition: color 0.2s, background 0.2s;
+}
+
+.ball-drag:hover {
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.ball-drag:active {
+  cursor: grabbing;
+}
+
+/* ── the two actions, centred as one group on both axes ── */
+.ball-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+}
+
+.ball-btn {
+  width: 60px;
+  height: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, opacity 0.2s;
+  font-family: inherit;
+}
+
+.ball-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ball-btn:active {
+  transform: scale(0.95);
+}
+
+.ball-btn svg {
+  opacity: 0.8;
+}
+
+/* ready = the selection allows this action */
+.ball-btn.ready {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.ball-btn.idle {
+  opacity: 0.4;
+}
+
+.ball-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+#btn-dissolve.ready:hover {
+  background: rgba(239, 68, 68, 0.28);
+  color: #f87171;
+}
+
+#btn-merge.ready:hover {
+  background: rgba(59, 130, 246, 0.28);
+  color: #60a5fa;
+}
+
+/* ── far right, vertically centred: close (always visible, matches the grip) ── */
+.ball-close {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.38);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ball-close:hover {
+  background: rgba(239, 68, 68, 0.75);
+  color: #fff;
+}
+
+/* ── status strip (below the capsule, inside the window bounds) ── */
+.counter,
+.status {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 214px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(30, 30, 35, 0.85);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.counter.show {
+  opacity: 1;
+}
+
+.status {
+  background: rgba(30, 30, 35, 0.92);
+  color: #fff;
+  font-size: 11px;
+}
+
+.status.show {
+  opacity: 1;
+}
+
+.status.error {
+  background: rgba(239, 68, 68, 0.92);
+}
+
+.status.success {
+  background: rgba(34, 197, 94, 0.92);
+}
+
+.hidden {
+  display: none;
+}

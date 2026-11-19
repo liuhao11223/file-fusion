@@ -1,0 +1,72 @@
+{
+  "name": "file-fusion",
+  "title": "文件合并解散",
+  "description": "悬浮窗一键解散文件夹或将多个文件/文件夹合并；支持在资源管理器中多选后直接操作，带冲突处理与历史撤回。",
+  "version": "1.1.0",
+  "platform": ["win32"],
+  "logo": "logo.png",
+  "preload": "preload.js",
+  "main": "index.html",
+  "features": [
+    {
+      "code": "ball-show",
+      "explain": "显示悬浮窗，多选文件后点击按钮即可操作",
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "显示悬浮窗",
+          "match": "/^(悬浮窗|浮窗|显示悬浮窗)$/",
+          "minLength": 2
+        }
+      ],
+      "mainHide": true
+    },
+    {
+      "code": "ball-hide",
+      "explain": "隐藏悬浮窗",
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "隐藏悬浮窗",
+          "match": "/^(隐藏悬浮窗|关闭悬浮窗|收起悬浮窗)$/",
+          "minLength": 2
+        }
+      ],
+      "mainHide": true
+    },
+    {
+      "code": "dissolve-current",
+      "explain": "解散当前资源管理器中选中的文件夹",
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "解散选中文件夹",
+          "match": "/^(解散|解散文件夹|文件解散)$/",
+          "minLength": 2
+        }
+      ],
+      "mainHide": true
+    },
+    {
+      "code": "merge-current",
+      "explain": "合并当前资源管理器中选中的文件/文件夹",
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "合并选中项",
+          "match": "/^(合并|合并文件|文件合并)$/",
+          "minLength": 2
+        }
+      ],
+      "mainHide": true
+    },
+    {
+      "code": "panel",
+      "explain": "打开设置面板",
+      "cmds": ["文件合并解散", "文件合并设置"]
+    }
+  ],
+  "pluginSetting": {
+    "single": false
+  }
+}
