@@ -14,14 +14,29 @@
  *
  * Two packaging details matter for this plugin:
  *
- *  1. The PowerShell helpers in lib/*.ps1 are executed by an external
- *     process. A process cannot read a file from inside an asar archive, so the
- *     scripts are marked `unpack` in plugin.json and land in the
- *     "<name>.asar.unpacked" sidecar next to the archive. preload.js resolves
- *     the real path through lib/paths.js.
+ *  1. The archive must be FULLY PACKED — do not pass an unpack pattern to the
+ *     asar packer. The host's own packZpx() does the same
+ *     (asar.createPackage(sourceDir, tempAsarPath), no options).
  *
- *  2. The asar builder is resolved from the local npm cache when the machine
- *     is offline, so packaging never depends on a live registry.
+ *     During installation the host runs prepareZpxAsar(), which calls
+ *     asar.extractAll() on the materialized archive. extractAll() reads
+ *     "unpacked" entries from a "<name>.asar.unpacked" sidecar — and a .zpx
+ *     carries no sidecar. An archive that already declares unpacked entries
+ *     therefore makes the installer fail with
+ *       ENOENT: ... plugin.asar.unpacked/lib/explorer-select.ps1
+ *
+ *     The host applies plugin.json.unpack itself after extracting, and only
+ *     then repacks with the unpack pattern. So the .zpx has to ship the
+ *     scripts packed, and plugin.json keeps "unpack": "*.ps1" so the host
+ *     puts them into the sidecar of the *installed* plugin.
+ *
+ *  2. The PowerShell helpers in lib/*.ps1 are executed by an external process.
+ *     A process cannot read a file from inside an asar archive, so the host
+ *     unpacks them next to the installed archive and preload.js resolves the
+ *     real path through lib/paths.js.
+ *
+ * The asar builder is resolved from the local npm cache when the machine is
+ * offline, so packaging never depends on a live registry.
  */
 
 "use strict";
@@ -141,13 +156,14 @@ function build() {
     const asarPath = path.join(packagesDir, `${baseName}.asar`);
     const zpxPath = path.join(packagesDir, `${baseName}.zpx`);
 
-    // 1) pack the asar. `unpack` mirrors plugin.json.unpack so the PowerShell
-    //    helpers end up as real files next to the archive.
-    execFileSync(
-      process.execPath,
-      [asarCli, "pack", stageDir, asarPath, "--unpack", manifest.unpack || "*.ps1"],
-      { stdio: "inherit" }
-    );
+    // 1) pack the asar.
+    //
+    //    No --unpack here on purpose: the archive that ships inside the .zpx
+    //    must be fully packed, because the host extracts it with
+    //    asar.extractAll() during installation and that call needs a sidecar
+    //    for unpacked entries. The host applies plugin.json.unpack itself
+    //    when it repacks the installed plugin.
+    execFileSync(process.execPath, [asarCli, "pack", stageDir, asarPath], { stdio: "inherit" });
 
     // 2) brotli-compress the asar into the installer package.
     const asarBuf = fs.readFileSync(asarPath);
@@ -163,20 +179,25 @@ function build() {
     console.log(`\n  asar : ${asarPath}  (${asarBuf.length} 字节)`);
     console.log(`  zpx  : ${zpxPath}  (${zpxBuf.length} 字节)`);
 
-    const unpackedDir = `${asarPath}.unpacked`;
-    if (fs.existsSync(unpackedDir)) {
-      const unpacked = [];
-      const walk = (dir, base) => {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-          const full = path.join(dir, entry.name);
-          const rel = path.join(base, entry.name);
-          if (entry.isDirectory()) walk(full, rel);
-          else unpacked.push(rel);
-        }
-      };
-      walk(unpackedDir, "");
-      console.log(`  解包 : ${unpacked.join(", ")}`);
+    // 4) the archive must not contain unpacked entries — the installer would
+    //    fail with ENOENT on the missing sidecar.
+    const jsonLen = asarBuf.readUInt32LE(12);
+    const header = JSON.parse(asarBuf.slice(16, 16 + jsonLen).toString("utf-8"));
+    const unpackedEntries = [];
+    const walk = (node, prefix) => {
+      for (const [name, child] of Object.entries(node.files || {})) {
+        const rel = prefix ? `${prefix}/${name}` : name;
+        if (child.files) walk(child, rel);
+        else if (child.unpacked) unpackedEntries.push(rel);
+      }
+    };
+    walk(header, "");
+    if (unpackedEntries.length > 0) {
+      throw new Error(
+        `归档中含有 unpack 条目（${unpackedEntries.join(", ")}），宿主安装时会失败`
+      );
     }
+    console.log("  校验 : 归档内无 unpack 条目 ✅");
     console.log("");
   } finally {
     fs.rmSync(stageDir, { recursive: true, force: true });

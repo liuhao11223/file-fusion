@@ -69,7 +69,6 @@ npm run package      # 生成 .asar 与 .zpx
 | --- | --- |
 | `packages/file-fusion-<版本>.zpx` | **官方安装包**，双击或在 ZTools「设置 → 插件」里导入即可安装 |
 | `packages/file-fusion-<版本>.asar` | 未压缩归档，供手工放到插件目录使用 |
-| `packages/file-fusion-<版本>.asar.unpacked/` | 解包出来的 PowerShell 脚本（安装时由宿主自动生成） |
 
 打包后可以跑一遍自检：
 
@@ -77,9 +76,17 @@ npm run package      # 生成 .asar 与 .zpx
 npm run verify
 ```
 
-自检会模拟宿主的安装流程（`prepareZpxAsar`）并真正执行一次 PowerShell 助手，确认打包后的插件仍能读取资源管理器选中项。
+自检会**用宿主自己的 `asar.extractAll()` / `createPackageWithOptions()` 复刻完整安装流程**（`prepareZpxAsar`），并真正执行一次 PowerShell 助手，确认打包后的插件仍能读取资源管理器选中项。
 
 > **为什么 `.ps1` 要解包**：安装后插件文件位于 Electron 的 asar 归档内。归档里的文件可以被 `fs` 读取，但**外部进程读不到**——PowerShell 收到 `-File <路径>.asar\lib\explorer-select.ps1` 会直接报「文件不存在」。因此 `plugin.json` 里声明了 `"unpack": "*.ps1"`，宿主会把这些脚本解包到归档旁边的 `.asar.unpacked` 目录，`lib/paths.js` 再负责把归档内路径映射到真实的磁盘路径。
+
+> **打包时不要给 asar 打包器传 `--unpack`**：`.zpx` 里的归档必须是**完全打包**的状态。宿主安装时会对解包出来的归档调用 `asar.extractAll()`，而 `extractAll()` 读取 `unpacked` 条目时需要 `<name>.asar.unpacked` 边车目录——`.zpx` 并不携带边车，归档里若自带 unpack 条目，安装会直接失败：
+>
+> ```
+> ENOENT: no such file or directory, open '.../plugin.asar.unpacked/lib/explorer-select.ps1'
+> ```
+>
+> 宿主自己的 `packZpx()` 同样不传 unpack 选项；`plugin.json.unpack` 是宿主在**安装阶段**解压后重新打包时才应用的。打包脚本已内置校验：若归档里出现 unpack 条目会直接报错。
 
 ### 方式三：ZIP 包
 
