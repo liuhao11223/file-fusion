@@ -19,6 +19,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync, spawn } = require("node:child_process");
 
+// When the plugin is installed from a .zpx package its files live inside an
+// Electron asar archive. PowerShell cannot read files from inside an archive,
+// so the helper scripts are shipped unpacked next to it and this resolver maps
+// the in-archive path onto its real on-disk twin.
+const { resolveScriptPath } = require("./lib/paths.js");
+
 const POWERSHELL_CANDIDATES = [
   process.env.SystemRoot
     ? path.join(process.env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
@@ -101,7 +107,7 @@ function parseSelectionOutput(output) {
 
 // Fresh, authoritative read of the Explorer selection.
 function readExplorerSelection() {
-  const psScript = path.join(__dirname, "lib", "explorer-select.ps1");
+  const psScript = resolveScriptPath(path.join(__dirname, "lib"), "explorer-select.ps1");
   try {
     return parseSelectionOutput(runPowerShell(psScript));
   } catch (e) {
@@ -140,7 +146,7 @@ function stopWatcher() {
 
 function startWatcher() {
   stopWatcher();
-  const psScript = path.join(__dirname, "lib", "explorer-watch.ps1");
+  const psScript = resolveScriptPath(path.join(__dirname, "lib"), "explorer-watch.ps1");
   let exe = POWERSHELL_CANDIDATES[0];
   for (const candidate of POWERSHELL_CANDIDATES) {
     try {

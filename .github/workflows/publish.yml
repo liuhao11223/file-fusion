@@ -1,0 +1,32 @@
+name: Publish to npm (Trusted Publisher)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      # npm Trusted Publisher 使用 OIDC 换取发布凭据，无需长期 token
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Verify package contents
+        run: npm pack --dry-run
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          # Trusted Publisher 生效后此变量可为空；未配置连接时用它兜底
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

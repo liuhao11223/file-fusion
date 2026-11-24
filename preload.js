@@ -25,6 +25,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync, spawn } = require("node:child_process");
 
+// When the plugin is installed from a .zpx package its files live inside an
+// Electron asar archive. PowerShell cannot read files from inside an archive,
+// so the helper scripts are shipped unpacked next to it and this resolver maps
+// the in-archive path onto its real on-disk twin.
+const { resolveScriptPath } = require("./lib/paths.js");
+
 const BALL_HTML = "ball.html";
 const BALL_PRELOAD = "ball-preload.js";
 
@@ -128,7 +134,7 @@ function parseSelectionOutput(output) {
 }
 
 function readExplorerSelection() {
-  const psScript = path.join(__dirname, "lib", "explorer-select.ps1");
+  const psScript = resolveScriptPath(path.join(__dirname, "lib"), "explorer-select.ps1");
   try {
     return parseSelectionOutput(runPowerShell(psScript));
   } catch (e) {

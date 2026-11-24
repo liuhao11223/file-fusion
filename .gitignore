@@ -10,3 +10,6 @@ file-fusion-history.json
 *.log
 # npm
 *.tgz
+
+# asar 打包时产生的解包副本（安装时会由宿主自动生成）
+*.asar.unpacked/

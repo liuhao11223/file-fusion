@@ -54,9 +54,38 @@
 
 3. 重启 ZTools，插件即被加载（开发目录插件自动注册）。
 
-### 方式二：打包安装
+### 方式二：打包安装（.zpx 官方安装包）
+
+仓库自带打包脚本，产物在 `packages/`：
+
+```bash
+npm install          # 安装 @electron/asar
+npm run package      # 生成 .asar 与 .zpx
+```
+
+产物：
+
+| 文件 | 说明 |
+| --- | --- |
+| `packages/file-fusion-<版本>.zpx` | **官方安装包**，双击或在 ZTools「设置 → 插件」里导入即可安装 |
+| `packages/file-fusion-<版本>.asar` | 未压缩归档，供手工放到插件目录使用 |
+| `packages/file-fusion-<版本>.asar.unpacked/` | 解包出来的 PowerShell 脚本（安装时由宿主自动生成） |
+
+打包后可以跑一遍自检：
+
+```bash
+npm run verify
+```
+
+自检会模拟宿主的安装流程（`prepareZpxAsar`）并真正执行一次 PowerShell 助手，确认打包后的插件仍能读取资源管理器选中项。
+
+> **为什么 `.ps1` 要解包**：安装后插件文件位于 Electron 的 asar 归档内。归档里的文件可以被 `fs` 读取，但**外部进程读不到**——PowerShell 收到 `-File <路径>.asar\lib\explorer-select.ps1` 会直接报「文件不存在」。因此 `plugin.json` 里声明了 `"unpack": "*.ps1"`，宿主会把这些脚本解包到归档旁边的 `.asar.unpacked` 目录，`lib/paths.js` 再负责把归档内路径映射到真实的磁盘路径。
+
+### 方式三：ZIP 包
 
 把仓库内容打成 `.zip`（保持 `plugin.json` 在压缩包根部），在 ZTools「设置 → 插件」里从本地安装。
+
+> 注意：ZIP 安装方式下插件以目录形式存在，PowerShell 脚本直接可用，不需要解包处理。
 
 ## 工作原理
 
@@ -69,7 +98,7 @@
 
 ```
 file-fusion/
-├── plugin.json          # 插件清单（指令、平台、入口）
+├── plugin.json          # 插件清单（指令、平台、入口、unpack 规则）
 ├── preload.js           # 插件视图 preload：悬浮窗管理 + 操作分发 + window.services
 ├── index.html           # 设置面板（预览/设置/历史撤销）
 ├── ball.html            # 悬浮窗页面
@@ -77,8 +106,15 @@ file-fusion/
 ├── ball.js              # 悬浮窗渲染逻辑（按钮/拖拽/计数）
 ├── ball-preload.js      # 悬浮窗 preload：选择读取/监视 + 操作执行
 ├── logo.png             # 插件图标
+├── verify-package.js    # 打包自检（模拟宿主安装流程）
+├── scripts/
+│   ├── make-package.js  # 打包脚本：生成 .asar + .zpx
+│   ├── runtime-probe.js # 运行时探针：验证 PowerShell 助手可执行
+│   ├── preload-smoke.js # preload 冒烟测试
+│   └── fusion-smoke.js  # 解散/合并逻辑冒烟测试
 └── lib/
     ├── fusion.js        # 解散/合并/撤销核心逻辑
+    ├── paths.js         # asar 解包路径解析（归档内路径 → 真实磁盘路径）
     ├── explorer-lib.ps1 # Explorer 选择读取共享库（UIA + COM）
     ├── explorer-select.ps1  # 一次性读取选中项
     └── explorer-watch.ps1   # 长驻选择监视器

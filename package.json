@@ -52,6 +52,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "pack:check": "npm pack --dry-run"
+    "pack:check": "npm pack --dry-run",
+    "package": "node scripts/make-package.js",
+    "verify": "node verify-package.js",
+    "prepackage": "node scripts/make-package.js"
+  },
+  "devDependencies": {
+    "@electron/asar": "^4.3.2"
   }
 }
